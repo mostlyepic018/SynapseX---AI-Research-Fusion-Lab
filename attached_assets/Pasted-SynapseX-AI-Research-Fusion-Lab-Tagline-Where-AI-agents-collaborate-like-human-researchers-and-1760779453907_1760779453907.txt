@@ -1,0 +1,438 @@
+SynapseX – AI Research Fusion Lab
+Tagline: Where AI agents collaborate like human researchers — and now, so can you.
+
+🌐 GENERAL OVERVIEW
+Goal:
+ Build a collaborative AI research platform where humans and AI agents (powered by Gemini 2.5) co-create, analyze, and understand research papers together — like a real digital lab team.
+Theme:
+ Minimalistic, futuristic, intelligent — white base, neon blue & violet glow accents, smooth motion, academic font styling.
+
+🧩 TECHNOLOGY STACK
+Frontend
+React (Vite or Next.js)
+
+
+TailwindCSS + shadcn/ui components
+
+
+Framer Motion for page transitions
+
+
+Lucide Icons for clean vector icons
+
+
+React Flow or D3.js for knowledge graph
+
+
+Socket.io-client or native WebSockets for real-time collaboration
+
+
+Backend
+FastAPI (Python) — main API framework
+
+
+Gemini 2.5 API — multi-agent intelligence backbone
+
+
+PostgreSQL or MongoDB — research data + versioning
+
+
+SQLModel or Motor (async) — database ORM
+
+
+Redis (optional) — caching agent responses
+
+
+WebSockets (FastAPI built-in) — for team workspace sync
+
+
+PyMuPDF / LangChain DocumentLoaders — paper parsing
+
+
+Auth via JWT — for secure workspace access
+
+
+
+
+
+Env Example:
+
+ GEMINI_API_KEY=your_gemini_key
+DATABASE_URL=postgresql://user:pass@host/db
+JWT_SECRET=supersecret
+
+
+
+🎨 FRONTEND PROMPT
+“Build a minimalistic, futuristic web interface for SynapseX using React, TailwindCSS, and shadcn/ui. The app should feel like a calm AI research workspace with glowing accents and modular panels for each feature.”
+🧩 Layout Overview
+Sidebar (Left-aligned, persistent):
+
+
+Icon + label buttons for:
+
+
+🧠 Multi-Agent Collaboration
+
+
+🔍 Paper Explorer
+
+
+💬 Chat-with-Paper
+
+
+🔗 Related Research
+
+
+🧾 Paper Generator
+
+
+🧬 Knowledge Graph
+
+
+👨‍🏫 Human Coaching
+
+
+👥 Team Workspace
+
+
+Collapsible sidebar with hover tooltips and glow.
+
+
+Top Bar:
+
+
+Project title, workspace selector, user avatar, dark/light toggle.
+
+
+Main Content Area:
+
+
+Dynamic view that changes per selected feature (using useState or React Router).
+
+
+Smooth transitions between features with Framer Motion.
+
+
+
+⚙️ Frontend Feature Blueprints
+🧠 Multi-Agent Collaboration
+Grid of agent cards:
+
+
+NLP Agent, Reasoning Agent, Data Agent, CV Agent, Critic Agent, Retrieval Agent
+
+
+Each card shows:
+
+
+Status (active, idle, reasoning)
+
+
+Task summary
+
+
+“Ping Agent” / “Assign Task” button
+
+
+Live terminal/log feed below showing inter-agent conversations.
+
+
+🔍 Smart Research Paper Explorer
+Search bar with filters (Source: ArXiv/Semantic Scholar APIs)
+
+
+Results grid (title, abstract snippet, tags, date)
+
+
+“Add to Lab” button → stores in workspace.
+
+
+Right panel: “Saved Papers”.
+
+
+💬 Chat-with-Paper
+Upload PDF or paste link → backend extracts sections.
+
+
+Chat interface:
+
+
+“What dataset was used?”, “Summarize Section 3”, etc.
+
+
+Multi-agent responses with agent tags ([Reasoning Agent], [NLP Agent]).
+
+
+Optional: Simplified vs technical explanation toggle.
+
+
+🔗 Related Research Finder
+Input topic/project → AI retrieves semantically related papers.
+
+
+Visualization: network graph connecting papers, datasets, and citations.
+
+
+Option: export as “Auto Literature Review”.
+
+
+🧾 Dynamic Paper Generator
+Split-view:
+
+
+Left: Markdown editor
+
+
+Right: academic-style rendered preview
+
+
+Agents contribute in real time (different cursor colors)
+
+
+Auto-citations, version control (v1.1, v1.2)
+
+
+“Export as PDF” and “View revision history”
+
+
+🧬 Knowledge Fusion Graph
+Interactive graph (React Flow or D3)
+
+
+Nodes: users, agents, papers, datasets, key ideas.
+
+
+Edges: reasoning, validation, citation.
+
+
+Click node → open contribution or reasoning details.
+
+
+👨‍🏫 Human-in-the-Loop Coaching
+Chat panel for user feedback to guide AI.
+
+
+“Focus on dataset bias” / “Add comparison with 2024 papers”
+
+
+Shows agent adaptation logs (“Reasoning Agent adjusted logic threshold”)
+
+
+History view for learning progress.
+
+
+👥 Team Collaboration Workspace
+Shared project document area.
+
+
+Live chat + real-time edits (via WebSockets).
+
+
+Assign tasks to agents or teammates:
+
+
+“@ReasoningAgent validate Section 2.”
+
+
+“@Pritam summarize related works.”
+
+
+Live presence indicator (avatars + typing indicators).
+
+
+
+🎨 Frontend Styling
+Minimalistic white base (bg-gray-50)
+
+
+Neon blue accent (#4F46E5), violet hover state (#7C3AED)
+
+
+Soft shadows, smooth card hover effects
+
+
+Font: Inter / IBM Plex Sans
+
+
+Floating bottom-right “Agent Console” button (shows AI logs)
+
+
+
+⚙️ BACKEND PROMPT
+“Build a FastAPI backend for SynapseX that integrates Gemini 2.5 API for agent reasoning, Semantic Scholar API for research retrieval, and supports team collaboration through WebSockets.”
+
+🧩 Directory Structure
+app/
+ ├── main.py
+ ├── routes/
+ │    ├── agents.py
+ │    ├── papers.py
+ │    ├── chat.py
+ │    ├── teams.py
+ ├── services/
+ │    ├── gemini_agent.py
+ │    ├── paper_parser.py
+ │    ├── retrieval_service.py
+ ├── db/
+ │    ├── models.py
+ │    ├── schemas.py
+ │    ├── database.py
+ └── utils/
+      ├── auth.py
+      ├── websocket_manager.py
+
+
+🔹 Core API Endpoints
+/agents/ask
+POST → handles queries to AI agents
+ Input:
+{ "query": "Explain dataset bias in the uploaded paper", "role": "reasoning" }
+
+Process:
+Routes to Gemini 2.5 with appropriate agent system prompt.
+
+
+Combines responses if multiple agents are involved.
+ Output:
+
+
+{ "agent": "ReasoningAgent", "response": "The dataset exhibits bias due to..." }
+
+
+/papers/search
+GET → search papers via ArXiv/Semantic Scholar
+ Query params: q, domain, year
+ Returns: title, authors, abstract, url, year.
+
+/papers/upload
+POST → upload a PDF
+Parse content using PyMuPDF
+
+
+Store structured sections in DB
+ Returns: { paper_id, sections }
+
+
+
+/chat/paper
+POST → chat about uploaded paper
+ Input:
+{ "paper_id": "123", "question": "What dataset was used?" }
+
+Process:
+Extract relevant sections.
+
+
+Call Gemini with context.
+ Output:
+
+
+{ "answer": "The paper uses the COCO dataset for evaluation." }
+
+
+/research/related
+POST → fetch semantically related papers
+ Input: topic or text.
+ Output: JSON with graph nodes and edges.
+
+/paper/generate
+POST → multi-agent collaborative paper creation
+Uses Gemini 2.5 roles (NLP for writing, Reasoning for validation)
+
+
+Stores revisions.
+ Output: versioned markdown + citations.
+
+
+
+/team/ws
+WebSocket → real-time collaboration
+Broadcast user edits, messages, and agent updates.
+
+
+Supports multi-user live editing.
+
+
+
+🧠 Gemini 2.5 Multi-Agent System
+Each agent is a function wrapper around Gemini 2.5:
+async def call_gemini(role: str, query: str, context: str = None):
+    system_prompt = f"You are the {role} in a collaborative AI research lab. Work cooperatively with others."
+    response = await gemini.chat(
+        system=system_prompt,
+        messages=[{"role": "user", "content": query}],
+        context=context
+    )
+    return response
+
+Agents:
+NLP Agent: Writing, summarization
+
+
+Reasoning Agent: Logical validation
+
+
+Retrieval Agent: Fetching related research
+
+
+Data Agent: Numeric/data visualization reasoning
+
+
+Critic Agent: Review and scoring
+
+
+CV Agent: Interprets figures or visual data
+
+
+
+🧾 Database Models
+class User(BaseModel):
+    id: str
+    name: str
+    email: str
+
+class Paper(BaseModel):
+    id: str
+    title: str
+    abstract: str
+    sections: list
+    uploaded_by: str
+
+class ResearchMessage(BaseModel):
+    sender: str
+    content: str
+    role: str  # 'user' | 'agent'
+    timestamp: datetime
+
+
+
+💬 WebSocket Collaboration Flow
+/team/ws/{workspace_id}
+
+
+Broadcasts real-time messages, edits, AI updates.
+
+
+Supports both human and AI participants.
+
+
+Example event payload:
+
+
+{ "sender": "ReasoningAgent", "message": "Validated Section 3 equations." }
+
+
+
+🔒 Authentication
+JWT tokens for login
+
+
+Middleware checks workspace access
+
+
+Optional Supabase Auth integration
+
+
+Initially make a plan in phases building the project one by one , verify after every phase completion and then build it
+Make sure you cover each and every feature included above
