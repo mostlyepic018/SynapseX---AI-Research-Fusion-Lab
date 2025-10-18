@@ -8,15 +8,18 @@ import { Separator } from "@/components/ui/separator";
 import { Upload, Send, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useMutation } from "@tanstack/react-query";
-import { chatWithPaper } from "@/lib/api";
+import { chatWithPaper, createPaper } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import type { Message } from "@shared/schema";
+import type { Message } from "@/types/schema";
+import { Input } from "@/components/ui/input";
 
 export default function ChatWithPaper() {
   const [selectedPaper, setSelectedPaper] = useState<{ title: string; id: string } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [newPaperTitle, setNewPaperTitle] = useState("");
+  const [newPaperUrl, setNewPaperUrl] = useState("");
   const { toast } = useToast();
 
   const sendMessageMutation = useMutation({
@@ -66,6 +69,25 @@ export default function ChatWithPaper() {
     }
   };
 
+  const createPaperMutation = useMutation({
+    mutationFn: () => createPaper({ title: newPaperTitle.trim(), url: newPaperUrl.trim() || undefined }),
+    onSuccess: (paper) => {
+      setSelectedPaper({ id: paper.id, title: paper.title });
+      toast({ title: "Paper ready", description: `Selected: ${paper.title}` });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to add paper", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleCreatePaper = () => {
+    if (!newPaperTitle.trim()) {
+      toast({ title: "Title required", description: "Please enter a paper title", variant: "destructive" });
+      return;
+    }
+    createPaperMutation.mutate();
+  };
+
   return (
     <div className="container max-w-6xl mx-auto p-6 space-y-6">
       <div className="space-y-2">
@@ -78,27 +100,35 @@ export default function ChatWithPaper() {
       <Separator />
 
       {!selectedPaper ? (
-        <Card className="p-12">
-          <div className="flex flex-col items-center text-center space-y-4">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <Upload className="w-10 h-10 text-primary" />
+        <Card className="p-6">
+          <div className="grid gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Upload className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Add or Select a Paper</h3>
+                <p className="text-sm text-muted-foreground">Enter a title and optional link to start chatting</p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold">Upload a Research Paper</h3>
-              <p className="text-muted-foreground max-w-md">
-                Upload a PDF or paste a paper link to start asking questions and get insights from AI agents
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button data-testid="button-upload-pdf">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload PDF
+            <div className="grid md:grid-cols-3 gap-3">
+              <Input
+                placeholder="Paper title"
+                value={newPaperTitle}
+                onChange={(e) => setNewPaperTitle(e.target.value)}
+                data-testid="input-paper-title"
+              />
+              <Input
+                placeholder="Link (optional)"
+                value={newPaperUrl}
+                onChange={(e) => setNewPaperUrl(e.target.value)}
+                data-testid="input-paper-link"
+              />
+              <Button onClick={handleCreatePaper} disabled={!newPaperTitle.trim() || createPaperMutation.isPending} data-testid="button-create-paper">
+                {createPaperMutation.isPending ? "Adding..." : "Add & Select"}
               </Button>
-              <Button variant="outline" data-testid="button-paste-link">
-                <FileText className="w-4 h-4 mr-2" />
-                Paste Link
-              </Button>
             </div>
+            <p className="text-xs text-muted-foreground">You can also use the Paper Explorer to add papers to your lab.</p>
           </div>
         </Card>
       ) : (

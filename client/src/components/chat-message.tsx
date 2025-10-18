@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Brain, User } from "lucide-react";
-import type { Message } from "@shared/schema";
+import type { Message } from "@/types/schema";
 import { cn } from "@/lib/utils";
 
 const agentNames = {

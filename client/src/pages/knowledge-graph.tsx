@@ -2,8 +2,21 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Network, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getGraphNodes, getGraphEdges } from "@/lib/api";
 
 export default function KnowledgeGraph() {
+  const [counts, setCounts] = useState({ nodes: 0, edges: 0 });
+  useEffect(() => {
+    // In absence of workspace selection UI, use a dummy workspace id
+    const wsId = "default";
+    Promise.allSettled([getGraphNodes(wsId), getGraphEdges(wsId)]).then(([n, e]) => {
+      setCounts({
+        nodes: n.status === "fulfilled" ? n.value.length : 0,
+        edges: e.status === "fulfilled" ? e.value.length : 0,
+      });
+    });
+  }, []);
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
       <div className="space-y-2">
@@ -94,11 +107,11 @@ export default function KnowledgeGraph() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total Nodes</span>
-              <span className="font-medium">0</span>
+              <span className="font-medium">{counts.nodes}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Total Edges</span>
-              <span className="font-medium">0</span>
+              <span className="font-medium">{counts.edges}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Active Agents</span>

@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Users, Send, Circle } from "lucide-react";
+import { useWebSocket } from "@/lib/websocket";
 
 interface TeamMember {
   id: string;
@@ -18,11 +19,36 @@ interface TeamMember {
 
 export default function TeamWorkspace() {
   const [message, setMessage] = useState("");
+  const [chat, setChat] = useState<Array<{ sender: string; content: string; time: string }>>([
+    { sender: "You", content: "Let's focus on the methodology section", time: "2:30 PM" },
+    { sender: "NLP Agent", content: "I can help structure and refine the methodology description.", time: "2:31 PM" },
+  ]);
   const [members] = useState<TeamMember[]>([
     { id: "1", name: "You", role: "user", status: "online" },
     { id: "2", name: "NLP Agent", role: "agent", status: "online" },
     { id: "3", name: "Reasoning Agent", role: "agent", status: "away" },
   ]);
+
+  const { sendMessage } = useWebSocket((msg) => {
+    if (msg.type === "team_chat") {
+      setChat((c) => [
+        ...c,
+        {
+          sender: msg.data.sender,
+          content: msg.data.content,
+          time: new Date().toLocaleTimeString(),
+        },
+      ]);
+    }
+  });
+
+  const handleSend = () => {
+    if (!message.trim()) return;
+    const payload = { type: "team_chat", data: { sender: "You", content: message } };
+    setChat((c) => [...c, { sender: "You", content: message, time: new Date().toLocaleTimeString() }]);
+    setMessage("");
+    sendMessage(payload as any);
+  };
 
   const getStatusColor = (status: TeamMember["status"]) => {
     switch (status) {
@@ -68,32 +94,21 @@ export default function TeamWorkspace() {
             <h2 className="text-xl font-semibold mb-4">Team Chat</h2>
             <ScrollArea className="h-[300px] mb-4 p-4 border rounded-lg">
               <div className="space-y-4">
-                <div className="flex gap-3">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-muted text-xs">You</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">You</span>
-                      <span className="text-xs text-muted-foreground">2:30 PM</span>
+                {chat.map((m, i) => (
+                  <div key={i} className="flex gap-3">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-muted text-xs">{m.sender.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-sm">{m.sender}</span>
+                        {m.sender.includes("Agent") && <Badge variant="secondary" className="text-xs">Agent</Badge>}
+                        <span className="text-xs text-muted-foreground">{m.time}</span>
+                      </div>
+                      <p className="text-sm">{m.content}</p>
                     </div>
-                    <p className="text-sm">Let's focus on the methodology section</p>
                   </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <Avatar className="w-8 h-8 border-2 border-primary/20">
-                    <AvatarFallback className="bg-primary/10 text-xs">NLP</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-sm">NLP Agent</span>
-                      <Badge variant="secondary" className="text-xs">Agent</Badge>
-                      <span className="text-xs text-muted-foreground">2:31 PM</span>
-                    </div>
-                    <p className="text-sm">I can help structure and refine the methodology description.</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </ScrollArea>
 
@@ -102,10 +117,10 @@ export default function TeamWorkspace() {
                 placeholder="Type a message or @mention a team member..."
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && setMessage("")}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 data-testid="input-team-message"
               />
-              <Button size="icon" data-testid="button-send-team-message">
+              <Button size="icon" onClick={handleSend} data-testid="button-send-team-message">
                 <Send className="w-4 h-4" />
               </Button>
             </div>

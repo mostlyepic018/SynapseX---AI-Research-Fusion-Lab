@@ -1,11 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage";
+import { getStorage } from "./storage";
 import { queryAgent, analyzeDocument, generateSummary, type AgentRole } from "./gemini";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const storage = await getStorage();
   // Agent endpoints
   app.post("/api/agents/ask", async (req, res) => {
     try {
@@ -45,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Search local database first
-      const localPapers = await storage.searchPapers(q);
+  const localPapers = await storage.searchPapers(q);
 
       // Also search ArXiv for external papers
       const { searchArXiv } = await import("./arxiv");

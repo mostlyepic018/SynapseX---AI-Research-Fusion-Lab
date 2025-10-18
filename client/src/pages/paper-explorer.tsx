@@ -11,18 +11,22 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { searchPapers, createPaper } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import type { Paper } from "@shared/schema";
+import type { Paper } from "@/types/schema";
 
 export default function PaperExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSource, setSelectedSource] = useState<string>("all");
   const { toast } = useToast();
 
-  const { data: papers = [], isLoading: isSearching, refetch } = useQuery({
+  const { data: allPapers = [], isLoading: isSearching, refetch } = useQuery({
     queryKey: ["/api/papers/search", searchQuery],
     queryFn: () => searchQuery ? searchPapers(searchQuery) : Promise.resolve([]),
     enabled: false,
   });
+
+  const papers = (selectedSource === "all")
+    ? allPapers
+    : allPapers.filter(p => (p.source || "uploaded") === selectedSource);
 
   const addToLabMutation = useMutation({
     mutationFn: (paper: Paper) => createPaper({

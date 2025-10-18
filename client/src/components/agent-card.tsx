@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Brain, Database, Eye, Lightbulb, MessageSquare, Search } from "lucide-react";
-import type { AgentType } from "@shared/schema";
+import type { AgentType } from "@/types/schema";
 
 const agentIcons = {
   nlp: MessageSquare,
@@ -56,19 +56,16 @@ export function AgentCard({
     active: {
       color: "bg-emerald-500",
       label: "Active",
-      animation: "animate-pulse-glow-green",
       badge: "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300",
     },
     idle: {
       color: "bg-slate-400",
       label: "Idle",
-      animation: "",
       badge: "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400",
     },
     reasoning: {
       color: "bg-amber-500",
       label: "Reasoning",
-      animation: "animate-pulse-glow-amber",
       badge: "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300",
     },
   };
@@ -77,7 +74,7 @@ export function AgentCard({
 
   return (
     <Card
-      className={`p-6 hover-elevate transition-all duration-300 ${config.animation}`}
+      className="p-6 hover-elevate transition-all duration-300"
       data-testid={`agent-card-${agentType}`}
     >
       <div className="flex items-start gap-4">

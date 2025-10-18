@@ -5,14 +5,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { GitBranch, Search, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMutation } from "@tanstack/react-query";
+import { findRelatedResearch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RelatedResearch() {
   const [topic, setTopic] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [result, setResult] = useState<string>("");
+  const { toast } = useToast();
+
+  const searchMutation = useMutation({
+    mutationFn: () => findRelatedResearch({ topic }),
+    onSuccess: (data) => {
+      setResult(data.relatedInfo);
+      setIsSearching(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Search failed", description: error.message, variant: "destructive" });
+      setIsSearching(false);
+    },
+  });
 
   const handleSearch = () => {
+    if (!topic.trim()) return;
+    setResult("");
     setIsSearching(true);
-    setTimeout(() => setIsSearching(false), 1500);
+    searchMutation.mutate();
   };
 
   return (
@@ -72,6 +91,13 @@ export default function RelatedResearch() {
             ))}
           </div>
         </div>
+      ) : result ? (
+        <Card className="p-6">
+          <h3 className="font-semibold mb-2">Related Research Summary</h3>
+          <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
+            {result}
+          </div>
+        </Card>
       ) : (
         <Card className="p-12">
           <div className="flex flex-col items-center text-center space-y-4">

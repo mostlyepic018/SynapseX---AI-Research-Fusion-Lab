@@ -6,6 +6,10 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Save, Download, History, Bold, Italic, Heading } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { useMutation } from "@tanstack/react-query";
+import { generatePaper } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function PaperGenerator() {
   const [content, setContent] = useState(`# Research Paper Title
@@ -21,6 +25,19 @@ Start writing your research paper here. AI agents will collaborate with you in r
 
 ## Conclusion
 `);
+  const [topic, setTopic] = useState("");
+  const { toast } = useToast();
+
+  const generateMutation = useMutation({
+    mutationFn: () => generatePaper({ topic }),
+    onSuccess: (doc: any) => {
+      setContent(doc.content || content);
+      toast({ title: "Generated", description: `Created: ${doc.title}` });
+    },
+    onError: (error: any) => {
+      toast({ title: "Generation failed", description: error.message, variant: "destructive" });
+    }
+  });
 
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
@@ -40,7 +57,7 @@ Start writing your research paper here. AI agents will collaborate with you in r
             <Download className="w-4 h-4 mr-2" />
             Export PDF
           </Button>
-          <Button data-testid="button-save-paper">
+          <Button onClick={() => toast({ title: "Saved", description: "Document saved (local)" })} data-testid="button-save-paper">
             <Save className="w-4 h-4 mr-2" />
             Save
           </Button>
@@ -48,6 +65,15 @@ Start writing your research paper here. AI agents will collaborate with you in r
       </div>
 
       <Separator />
+
+      <Card className="p-4">
+        <div className="flex gap-2 items-center">
+          <Input placeholder="Topic to generate" value={topic} onChange={(e) => setTopic(e.target.value)} data-testid="input-generate-topic" />
+          <Button onClick={() => topic.trim() && generateMutation.mutate()} disabled={!topic.trim() || generateMutation.isPending} data-testid="button-generate-topic">
+            {generateMutation.isPending ? "Generating..." : "Generate from Topic"}
+          </Button>
+        </div>
+      </Card>
 
       <div className="flex items-center gap-2 mb-4">
         <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">

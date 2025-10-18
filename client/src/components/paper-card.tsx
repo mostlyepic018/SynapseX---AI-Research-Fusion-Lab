@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, ExternalLink, Calendar, Users } from "lucide-react";
-import type { Paper } from "@shared/schema";
+import type { Paper } from "@/types/schema";
 
 interface PaperCardProps {
   paper: Paper;

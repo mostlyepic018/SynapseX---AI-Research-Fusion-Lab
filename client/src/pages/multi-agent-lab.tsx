@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AgentCard } from "@/components/agent-card";
+import { AssignTaskDialog, type TaskAssignment } from "@/components/assign-task-dialog";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -8,7 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { askAgent } from "@/lib/api";
 import { useWebSocket } from "@/lib/websocket";
 import { useToast } from "@/hooks/use-toast";
-import { AGENT_TYPES, type AgentType } from "@shared/schema";
+import { AGENT_TYPES, type AgentType } from "@/types/schema";
 
 type AgentStatus = "active" | "idle" | "reasoning";
 
@@ -107,19 +108,62 @@ export default function MultiAgentLab() {
     },
   });
 
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [selectedAgentForTask, setSelectedAgentForTask] = useState<AgentType | null>(null);
+
   const handlePingAgent = (type: AgentType) => {
     pingAgentMutation.mutate({ role: type, query: "Status check - please confirm you are operational" });
   };
 
   const handleAssignTask = (type: AgentType) => {
+    setSelectedAgentForTask(type);
+    setTaskDialogOpen(true);
+  };
+
+  const handleTaskSubmit = (task: TaskAssignment) => {
+    // Update agent state with new task
+    setAgents((prev) =>
+      prev.map((agent) =>
+        agent.type === task.agentType
+          ? { ...agent, status: "active" as AgentStatus, taskSummary: task.taskTitle }
+          : agent
+      )
+    );
+
+    // Add log entry
+    const agentName = task.agentType.toUpperCase() + " Agent";
+    setLogs((prev) => [
+      ...prev,
+      {
+        agent: agentName,
+        message: `New task assigned: ${task.taskTitle} (Priority: ${task.priority})`,
+        timestamp: new Date(),
+      },
+    ]);
+
+    // Broadcast via WebSocket
+    sendMessage({
+      type: "agent_log",
+      data: {
+        agent: agentName,
+        message: `New task assigned: ${task.taskTitle}`,
+      },
+    });
+
     toast({
-      title: "Task assignment",
-      description: "Task assignment dialog would open here (to be implemented)",
+      title: "Task assigned successfully",
+      description: `${agentName} has started working on: ${task.taskTitle}`,
     });
   };
 
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
+      <AssignTaskDialog
+        open={taskDialogOpen}
+        onOpenChange={setTaskDialogOpen}
+        agentType={selectedAgentForTask}
+        onSubmit={handleTaskSubmit}
+      />
       <div className="space-y-2">
         <h1 className="text-4xl font-bold tracking-tight">Multi-Agent Collaboration Lab</h1>
         <p className="text-lg text-muted-foreground">
