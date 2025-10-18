@@ -4,3 +4,13 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+.local
+.env
+.env.*
+*.log
+*.local.*
+*.swp
+*.swo
+*.tmp
+**/.vscode
+**/.idea
