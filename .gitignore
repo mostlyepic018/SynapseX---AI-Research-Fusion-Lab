@@ -1,3 +1,5 @@
+# WhatsApp tokens and sessions
+/tokens/
 node_modules
 dist
 .DS_Store

@@ -5,7 +5,6 @@ import {
   GitBranch,
   FileText,
   Network,
-  GraduationCap,
   Users,
   ChevronRight,
 } from "lucide-react";
@@ -60,12 +59,6 @@ const navigationItems = [
     url: "/graph",
     icon: Network,
     testId: "nav-graph",
-  },
-  {
-    title: "Human Coaching",
-    url: "/coaching",
-    icon: GraduationCap,
-    testId: "nav-coaching",
   },
   {
     title: "Team Workspace",

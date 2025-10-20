@@ -1,4 +1,6 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,19 +8,26 @@ import { Separator } from "@/components/ui/separator";
 import { GitBranch, Search, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMutation } from "@tanstack/react-query";
-import { findRelatedResearch } from "@/lib/api";
+import { findRelatedResearch, type GraphNode, type GraphEdge } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import ResearchGraph from "@/components/research-graph";
 
 export default function RelatedResearch() {
   const [topic, setTopic] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<string>("");
+  const [graph, setGraph] = useState<{ nodes: GraphNode[]; edges: GraphEdge[] } | null>(null);
   const { toast } = useToast();
 
   const searchMutation = useMutation({
     mutationFn: () => findRelatedResearch({ topic }),
     onSuccess: (data) => {
       setResult(data.relatedInfo);
+      if (data.graph && data.graph.nodes && data.graph.edges) {
+        setGraph({ nodes: data.graph.nodes, edges: data.graph.edges });
+      } else {
+        setGraph(null);
+      }
       setIsSearching(false);
     },
     onError: (error: any) => {
@@ -31,6 +40,7 @@ export default function RelatedResearch() {
     if (!topic.trim()) return;
     setResult("");
     setIsSearching(true);
+    setGraph(null);
     searchMutation.mutate();
   };
 
@@ -92,12 +102,23 @@ export default function RelatedResearch() {
           </div>
         </div>
       ) : result ? (
-        <Card className="p-6">
-          <h3 className="font-semibold mb-2">Related Research Summary</h3>
-          <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-            {result}
-          </div>
-        </Card>
+        <div className="space-y-4">
+          {graph && (
+            <Card className="p-4">
+              <h3 className="font-semibold mb-3">Research Relationship Graph</h3>
+              <ResearchGraph nodes={graph.nodes} edges={graph.edges} height={460} />
+            </Card>
+          )}
+          <Card className="p-6">
+            <h3 className="font-semibold mb-2">Related Research Summary</h3>
+            <ReactMarkdown
+              className="prose prose-sm dark:prose-invert max-w-none"
+              remarkPlugins={[remarkGfm]}
+            >
+              {result}
+            </ReactMarkdown>
+          </Card>
+        </div>
       ) : (
         <Card className="p-12">
           <div className="flex flex-col items-center text-center space-y-4">

@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Upload, Send, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useMutation } from "@tanstack/react-query";
-import { chatWithPaper, createPaper } from "@/lib/api";
+import { chatWithPaper, createPaper, ingestPaperUrl, uploadPaperFile } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Message } from "@/types/schema";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ export default function ChatWithPaper() {
   const [isSending, setIsSending] = useState(false);
   const [newPaperTitle, setNewPaperTitle] = useState("");
   const [newPaperUrl, setNewPaperUrl] = useState("");
+  const [uploadFileObj, setUploadFileObj] = useState<File | null>(null);
   const { toast } = useToast();
 
   const sendMessageMutation = useMutation({
@@ -88,6 +89,27 @@ export default function ChatWithPaper() {
     createPaperMutation.mutate();
   };
 
+  const ingestUrlMutation = useMutation({
+    mutationFn: () => ingestPaperUrl({ url: newPaperUrl.trim(), title: newPaperTitle.trim() || undefined }),
+    onSuccess: (paper: any) => {
+      setSelectedPaper({ id: paper.id, title: paper.title });
+      toast({ title: "Ingested from URL", description: `Parsed: ${paper.title}` });
+    },
+    onError: (error: any) => toast({ title: "Failed to ingest URL", description: error.message, variant: "destructive" }),
+  });
+
+  const uploadPdfMutation = useMutation({
+    mutationFn: () => {
+      if (!uploadFileObj) throw new Error("No file selected");
+      return uploadPaperFile({ file: uploadFileObj, title: newPaperTitle.trim() || undefined, url: newPaperUrl.trim() || undefined });
+    },
+    onSuccess: (paper: any) => {
+      setSelectedPaper({ id: paper.id, title: paper.title });
+      toast({ title: "PDF uploaded", description: `Processed: ${paper.title}` });
+    },
+    onError: (error: any) => toast({ title: "Upload failed", description: error.message, variant: "destructive" }),
+  });
+
   return (
     <div className="container max-w-6xl mx-auto p-6 space-y-6">
       <div className="space-y-2">
@@ -108,7 +130,7 @@ export default function ChatWithPaper() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold">Add or Select a Paper</h3>
-                <p className="text-sm text-muted-foreground">Enter a title and optional link to start chatting</p>
+                <p className="text-sm text-muted-foreground">Enter a title and optional link or upload a PDF to start</p>
               </div>
             </div>
             <div className="grid md:grid-cols-3 gap-3">
@@ -127,6 +149,32 @@ export default function ChatWithPaper() {
               <Button onClick={handleCreatePaper} disabled={!newPaperTitle.trim() || createPaperMutation.isPending} data-testid="button-create-paper">
                 {createPaperMutation.isPending ? "Adding..." : "Add & Select"}
               </Button>
+            </div>
+            <div className="grid md:grid-cols-3 gap-3">
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(e) => setUploadFileObj(e.target.files?.[0] || null)}
+                className="md:col-span-2 border rounded px-3 py-2 text-sm"
+                data-testid="input-file-pdf"
+              />
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => ingestUrlMutation.mutate()}
+                  disabled={!newPaperUrl.trim() || ingestUrlMutation.isPending}
+                  data-testid="button-ingest-url"
+                >
+                  {ingestUrlMutation.isPending ? "Ingesting..." : "Ingest from URL"}
+                </Button>
+                <Button
+                  onClick={() => uploadPdfMutation.mutate()}
+                  disabled={!uploadFileObj || uploadPdfMutation.isPending}
+                  data-testid="button-upload-pdf"
+                >
+                  {uploadPdfMutation.isPending ? "Uploading..." : "Upload PDF"}
+                </Button>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground">You can also use the Paper Explorer to add papers to your lab.</p>
           </div>

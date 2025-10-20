@@ -6,10 +6,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Terminal } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
-import { askAgent } from "@/lib/api";
+import { askAgent, createTask, type CreateTaskRequest } from "@/lib/api";
 import { useWebSocket } from "@/lib/websocket";
 import { useToast } from "@/hooks/use-toast";
 import { AGENT_TYPES, type AgentType } from "@/types/schema";
+import { getWorkspaceId } from "@/lib/utils";
 
 type AgentStatus = "active" | "idle" | "reasoning";
 
@@ -21,6 +22,7 @@ interface AgentState {
 
 export default function MultiAgentLab() {
   const { toast } = useToast();
+  const WORKSPACE_ID = getWorkspaceId();
   const [agents, setAgents] = useState<AgentState[]>([
     {
       type: AGENT_TYPES.NLP,
@@ -69,7 +71,7 @@ export default function MultiAgentLab() {
     },
   ]);
 
-  const { sendMessage } = useWebSocket((message) => {
+  const { sendMessage } = useWebSocket((message: any) => {
     if (message.type === "agent_log") {
       setLogs((prev) => [...prev, {
         agent: message.data.agent,
@@ -77,7 +79,19 @@ export default function MultiAgentLab() {
         timestamp: new Date(),
       }]);
     }
-  });
+    if (message.type === 'task_started' || message.type === 'task_completed' || message.type === 'task_failed' || message.type === 'task_queued') {
+  const { task } = message as any;
+      const agentName = (task.agentType?.toUpperCase?.() || 'AGENT') + ' Agent';
+      const label = message.type.replace('task_', '').replace('_', ' ');
+      setLogs((prev) => [...prev, { agent: agentName, message: `${label}: ${task.title}`, timestamp: new Date() }]);
+      // reflect status on the corresponding agent card
+      setAgents((prev) => prev.map(a => a.type === task.agentType ? ({
+        ...a,
+        status: message.type === 'task_completed' ? 'idle' : message.type === 'task_failed' ? 'idle' : 'active',
+        taskSummary: message.type === 'task_completed' ? undefined : task.title,
+      }) : a));
+    }
+  }, { workspaceId: WORKSPACE_ID });
 
   const pingAgentMutation = useMutation({
     mutationFn: (data: { role: AgentType; query: string }) => askAgent(data),
@@ -120,40 +134,32 @@ export default function MultiAgentLab() {
     setTaskDialogOpen(true);
   };
 
-  const handleTaskSubmit = (task: TaskAssignment) => {
-    // Update agent state with new task
-    setAgents((prev) =>
-      prev.map((agent) =>
-        agent.type === task.agentType
-          ? { ...agent, status: "active" as AgentStatus, taskSummary: task.taskTitle }
-          : agent
-      )
-    );
+  const handleTaskSubmit = async (task: TaskAssignment) => {
+    try {
+      // Optimistic UI update
+      setAgents((prev) => prev.map((agent) => agent.type === task.agentType ? { ...agent, status: 'active' as AgentStatus, taskSummary: task.taskTitle } : agent));
+      const agentName = task.agentType.toUpperCase() + " Agent";
+      setLogs((prev) => [...prev, { agent: agentName, message: `New task assigned: ${task.taskTitle} (Priority: ${task.priority})`, timestamp: new Date() }]);
 
-    // Add log entry
-    const agentName = task.agentType.toUpperCase() + " Agent";
-    setLogs((prev) => [
-      ...prev,
-      {
-        agent: agentName,
-        message: `New task assigned: ${task.taskTitle} (Priority: ${task.priority})`,
-        timestamp: new Date(),
-      },
-    ]);
+      // Create backend task
+      const payload: CreateTaskRequest = {
+        title: task.taskTitle,
+        description: task.taskDescription || task.taskTitle,
+        agentType: task.agentType,
+        priority: (task.priority?.toLowerCase?.() as any) || 'medium',
+        workspaceId: WORKSPACE_ID,
+        paperId: task.paperId || undefined,
+        context: (task as any).context || undefined,
+      };
+      const created = await createTask(payload);
 
-    // Broadcast via WebSocket
-    sendMessage({
-      type: "agent_log",
-      data: {
-        agent: agentName,
-        message: `New task assigned: ${task.taskTitle}`,
-      },
-    });
+      // Broadcast local terminal log
+      sendMessage({ type: 'agent_log', data: { agent: agentName, message: `Queued task: ${created.title}` } });
 
-    toast({
-      title: "Task assigned successfully",
-      description: `${agentName} has started working on: ${task.taskTitle}`,
-    });
+      toast({ title: "Task queued", description: `${agentName} will process: ${created.title}` });
+    } catch (e: any) {
+      toast({ title: 'Task failed to queue', description: e?.message || 'Unknown error', variant: 'destructive' });
+    }
   };
 
   return (

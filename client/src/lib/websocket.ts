@@ -8,7 +8,7 @@ export interface WebSocketMessage {
   timestamp?: number;
 }
 
-export function useWebSocket(onMessage?: (message: WebSocketMessage) => void) {
+export function useWebSocket(onMessage?: (message: WebSocketMessage) => void, opts?: { workspaceId?: string }) {
   const ws = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const reconnectAttempts = useRef(0);
@@ -16,8 +16,23 @@ export function useWebSocket(onMessage?: (message: WebSocketMessage) => void) {
 
   useEffect(() => {
     const connect = () => {
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const env: any = (import.meta as any)?.env || {};
+      const base = env.VITE_WS_BASE || env.VITE_API_BASE || '';
+      let wsUrl = '';
+      if (base) {
+        try {
+          const u = new URL(base);
+          u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
+          u.pathname = '/ws';
+          wsUrl = u.toString();
+        } catch {
+          // fallback to window
+        }
+      }
+      if (!wsUrl) {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        wsUrl = `${protocol}//${window.location.host}/ws`;
+      }
 
       try {
         ws.current = new WebSocket(wsUrl);
@@ -26,6 +41,14 @@ export function useWebSocket(onMessage?: (message: WebSocketMessage) => void) {
           console.log("WebSocket connected");
           setIsConnected(true);
           reconnectAttempts.current = 0;
+          // Join workspace if provided
+          if (opts?.workspaceId) {
+            try {
+              ws.current?.send(JSON.stringify({ type: 'join_workspace', workspaceId: opts.workspaceId }));
+            } catch (e) {
+              console.warn('Failed to send join_workspace');
+            }
+          }
         };
 
         ws.current.onmessage = (event) => {
@@ -75,5 +98,11 @@ export function useWebSocket(onMessage?: (message: WebSocketMessage) => void) {
     }
   };
 
-  return { sendMessage, isConnected };
+  const joinWorkspace = (workspaceId: string) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ type: 'join_workspace', workspaceId }));
+    }
+  };
+
+  return { sendMessage, joinWorkspace, isConnected };
 }

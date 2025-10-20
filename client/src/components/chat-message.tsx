@@ -3,6 +3,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Brain, User } from "lucide-react";
 import type { Message } from "@/types/schema";
 import { cn } from "@/lib/utils";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import mermaid from "mermaid";
+import type { Components } from "react-markdown";
 
 const agentNames = {
   nlp: "NLP Agent",
@@ -50,15 +54,38 @@ export function ChatMessage({ message }: ChatMessageProps) {
 
         <div
           className={cn(
-            "px-4 py-3 rounded-lg",
+            "px-4 py-3 rounded-lg prose prose-invert max-w-none",
             isAgent
               ? "bg-primary/5 dark:bg-primary/10 rounded-tl-none"
               : "bg-muted rounded-tr-none"
           )}
         >
-          <p className="text-sm whitespace-pre-wrap" data-testid={`text-message-content-${message.id}`}>
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              code({ inline, className, children, ...props }: { inline?: boolean; className?: string; children?: any }) {
+                const txt = String(children ?? "");
+                const lang = (className || "").replace("language-", "");
+                if (!inline && (lang === "mermaid" || txt.trim().startsWith("mermaid"))) {
+                  const id = `mmd-${message.id}`;
+                  const def = lang === "mermaid" ? txt : txt.replace(/^mermaid\n/, "");
+                  // Mermaid v11 render is async; return a container and fill it after mount
+                  setTimeout(async () => {
+                    try {
+                      const el = document.getElementById(id);
+                      if (!el) return;
+                      const res = await mermaid.render(id + "-svg", def);
+                      el.innerHTML = res.svg; // eslint-disable-line react/no-danger
+                    } catch {}
+                  }, 0);
+                  return <div id={id} className="overflow-auto" />;
+                }
+                return <code className={className} {...props}>{children}</code>;
+              }
+            } as Components}
+          >
             {message.content}
-          </p>
+          </ReactMarkdown>
         </div>
 
         <span className="text-xs text-muted-foreground px-1">

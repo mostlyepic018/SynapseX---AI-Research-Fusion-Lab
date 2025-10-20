@@ -64,6 +64,7 @@ export function AssignTaskDialog({
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
+  const priorityValue: "low" | "medium" | "high" = (priority === "low" || priority === "medium" || priority === "high") ? priority : "medium";
 
   const handleSubmit = () => {
     if (!agentType || !taskTitle.trim()) return;
@@ -127,9 +128,9 @@ export function AssignTaskDialog({
 
           <div className="grid gap-2">
             <Label htmlFor="priority">Priority Level</Label>
-            <Select value={priority} onValueChange={(v: any) => setPriority(v)}>
+            <Select value={priorityValue} onValueChange={(v: any) => setPriority(v)}>
               <SelectTrigger id="priority" data-testid="select-priority">
-                <SelectValue />
+                <SelectValue placeholder="Select priority" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="low">

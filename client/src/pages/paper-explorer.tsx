@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { searchPapers, createPaper } from "@/lib/api";
+import { getWorkspaceId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import type { Paper } from "@/types/schema";
 
@@ -17,10 +18,11 @@ export default function PaperExplorer() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSource, setSelectedSource] = useState<string>("all");
   const { toast } = useToast();
+  const WORKSPACE_ID = getWorkspaceId();
 
   const { data: allPapers = [], isLoading: isSearching, refetch } = useQuery({
-    queryKey: ["/api/papers/search", searchQuery],
-    queryFn: () => searchQuery ? searchPapers(searchQuery) : Promise.resolve([]),
+    queryKey: ["/api/papers/search", searchQuery, "submittedDate", "descending"],
+    queryFn: () => searchQuery ? searchPapers(searchQuery, { sortBy: 'submittedDate', sortOrder: 'descending' }) : Promise.resolve([]),
     enabled: false,
   });
 
@@ -34,12 +36,17 @@ export default function PaperExplorer() {
       abstract: paper.abstract || undefined,
       authors: paper.authors || undefined,
       url: paper.url || undefined,
+      workspaceId: WORKSPACE_ID,
     }),
-    onSuccess: () => {
+    onSuccess: (created: any) => {
       toast({
         title: "Paper added to lab",
         description: "The paper has been successfully added to your workspace.",
       });
+      try {
+        // Invalidate or update workspace papers cache for immediate reflection in Team Workspace
+        queryClient.invalidateQueries({ queryKey: ["/api/papers/workspace", WORKSPACE_ID] });
+      } catch {}
     },
     onError: (error: any) => {
       toast({

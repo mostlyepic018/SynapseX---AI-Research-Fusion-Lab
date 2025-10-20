@@ -1,10 +1,35 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+import { setupSession, registerAuthRoutes, actionLogger } from "./auth";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Basic CORS for dev: allow Vite dev server with credentials (including LAN IPs)
+app.use((req, res, next) => {
+  const origin = req.headers.origin || '';
+  const isDev = app.get('env') === 'development';
+  const isVite5173 = /^(https?:\/\/)(localhost|127\.0\.0\.1|\d+\.\d+\.\d+\.\d+):5173$/.test(origin);
+  if (isDev && isVite5173) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
+
+// Sessions for auth
+setupSession(app);
+// Auth routes
+registerAuthRoutes(app);
+// Log all API actions to sqlite
+app.use(actionLogger());
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -61,10 +86,11 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
+  const host = process.env.HOST || '0.0.0.0';
   server.listen({
     port,
-    host: "127.0.0.1",
+    host,
   }, () => {
-    log(`serving on http://127.0.0.1:${port}`);
+    log(`serving on http://${host}:${port}`);
   });
 })();

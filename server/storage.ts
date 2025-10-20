@@ -9,9 +9,15 @@ export async function getStorage(): Promise<IStorage> {
     storageImpl = new DatabaseStorage();
     console.log("Storage: using DatabaseStorage (Postgres)");
   } else {
-    const { MemoryStorage } = await import("./storage.memory");
-    storageImpl = new MemoryStorage();
-    console.log("Storage: using MemoryStorage (in-memory)");
+    try {
+      const { SqliteStorage } = await import("./storage.sqlite");
+      storageImpl = new SqliteStorage();
+      console.log("Storage: using SqliteStorage (SQLite)");
+    } catch (e) {
+      const { MemoryStorage } = await import("./storage.memory");
+      storageImpl = new MemoryStorage();
+      console.warn("Storage: falling back to MemoryStorage (in-memory)");
+    }
   }
   return storageImpl;
 }

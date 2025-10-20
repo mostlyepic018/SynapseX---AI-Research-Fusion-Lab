@@ -15,7 +15,13 @@ import type {
   InsertKnowledgeNode,
   KnowledgeEdge,
   InsertKnowledgeEdge,
-} from "@shared/schema";
+  Task,
+  InsertTask,
+  WorkspaceMember,
+  InsertWorkspaceMember,
+  CanvasDocument,
+  InsertCanvasDocument,
+} from "../shared/schema";
 
 export interface IStorage {
   // Users
@@ -47,10 +53,33 @@ export interface IStorage {
   getDocument(id: string): Promise<GeneratedDocument | undefined>;
   getDocumentsByWorkspace(workspaceId: string): Promise<GeneratedDocument[]>;
   createDocument(doc: InsertGeneratedDocument): Promise<GeneratedDocument>;
+  updateDocument(id: string, updates: { title?: string; content?: string; bumpVersion?: boolean }): Promise<GeneratedDocument>;
+  listDocumentVersions(documentId: string): Promise<import("../shared/schema").GeneratedDocumentVersion[]>;
+  createDocumentVersion(payload: import("../shared/schema").InsertGeneratedDocumentVersion): Promise<import("../shared/schema").GeneratedDocumentVersion>;
 
   // Knowledge Graph
   getNodesByWorkspace(workspaceId: string): Promise<KnowledgeNode[]>;
   getEdgesByWorkspace(workspaceId: string): Promise<KnowledgeEdge[]>;
   createNode(node: InsertKnowledgeNode): Promise<KnowledgeNode>;
   createEdge(edge: InsertKnowledgeEdge): Promise<KnowledgeEdge>;
+
+  // Tasks
+  getTask(id: string): Promise<Task | undefined>;
+  getTasksByWorkspace(workspaceId: string): Promise<Task[]>;
+  getPendingTasks(workspaceId: string): Promise<Task[]>;
+  createTask(task: InsertTask): Promise<Task>;
+  updateTaskStatus(id: string, status: string, result?: string): Promise<Task>;
+  updateTaskProgress(id: string, status: string, startedAt?: Date, completedAt?: Date): Promise<Task>;
+
+  // Workspace Members
+  getWorkspaceMember(workspaceId: string, userId: string): Promise<WorkspaceMember | undefined>;
+  getWorkspaceMembers(workspaceId: string): Promise<WorkspaceMember[]>;
+  createWorkspaceMember(member: InsertWorkspaceMember): Promise<WorkspaceMember>;
+  updateMemberStatus(workspaceId: string, userId: string, status: string): Promise<WorkspaceMember>;
+
+  // Canvas Documents
+  getCanvasDocument(id: string): Promise<CanvasDocument | undefined>;
+  getCanvasDocumentsByWorkspace(workspaceId: string): Promise<CanvasDocument[]>;
+  createCanvasDocument(doc: InsertCanvasDocument): Promise<CanvasDocument>;
+  updateCanvasDocument(id: string, content: string, lastEditedBy: string): Promise<CanvasDocument>;
 }

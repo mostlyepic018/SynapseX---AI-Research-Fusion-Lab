@@ -47,13 +47,7 @@ SynapseX is a collaborative AI research platform where humans and AI agents powe
 - Nodes: papers, agents, datasets, key concepts
 - Edges: citations, reasoning, validation, collaboration
 
-### 7. Human-in-the-Loop Coaching
-- Provide feedback to guide AI agents
-- View agent adaptation logs
-- Learning progress tracking
-- Suggested guidance prompts
-
-### 8. Team Collaboration Workspace
+### 7. Team Collaboration Workspace
 - Real-time document editing via WebSockets
 - Live chat with team members and AI agents
 - Presence indicators and typing status
