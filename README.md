@@ -4,7 +4,7 @@ AI research collaboration platform where specialized agents work together like a
 
 SynapseX runs in two modes:
 - Frontend-only demo with mock data (no backend, fastest to try)
-- Full-stack with real AI (Express + Gemini API + WebSocket; optional Postgres)
+- Full-stack with real AI (Express + Gemini API + WebSocket; Database)
 
 ## Quick start
 
